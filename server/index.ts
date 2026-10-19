@@ -1,10 +1,17 @@
 import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 import { initPersistence } from "./persistence";
-import { setupConnection } from "./rooms";
+import { flushAllRooms, setupConnection } from "./rooms";
 
-const PORT = Number(process.env.WS_PORT ?? 1234);
+const PORT = Number(process.env.PORT ?? process.env.WS_PORT ?? 1234);
 const ROOM_PATH = /^\/rooms\/([A-Za-z0-9_-]{1,64})$/;
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const isAllowedOrigin = (origin: string | undefined): boolean =>
+  ALLOWED_ORIGINS.length === 0 || (origin !== undefined && ALLOWED_ORIGINS.includes(origin));
 
 const server = createServer((req, res) => {
   if (req.url === "/health") {
@@ -25,10 +32,26 @@ server.on("upgrade", (req, socket, head) => {
     socket.destroy();
     return;
   }
+  if (!isAllowedOrigin(req.headers.origin)) {
+    socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+    socket.destroy();
+    return;
+  }
   wss.handleUpgrade(req, socket, head, (ws) => {
     void setupConnection(ws, match[1]);
   });
 });
+
+async function shutdown(signal: string): Promise<void> {
+  console.log(`${signal} received, flushing boards`);
+  server.close();
+  wss.clients.forEach((client) => client.close(1001));
+  await flushAllRooms().catch((err) => console.error("flush on shutdown failed", err));
+  process.exit(0);
+}
+
+process.once("SIGTERM", () => void shutdown("SIGTERM"));
+process.once("SIGINT", () => void shutdown("SIGINT"));
 
 initPersistence()
   .then(() => {

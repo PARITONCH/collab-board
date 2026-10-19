@@ -37,7 +37,17 @@ Web app runs on `http://localhost:3000`, realtime server on `ws://localhost:1234
 - [x] Yjs sync, live cursors, presence
 - [x] Per-user undo/redo, zoom/pan
 - [ ] Resize handles, export to PNG
-- [ ] Deployment
+- [x] Deployment config (Render + Vercel + Neon), CI
+
+## Deployment
+
+| Part | Host | Settings |
+| --- | --- | --- |
+| Database | Neon (free Postgres) | Copy the connection string |
+| Realtime server | Render, from `render.yaml` | `DATABASE_URL` = Neon string, `ALLOWED_ORIGINS` = your Vercel URL |
+| Web app | Vercel | `NEXT_PUBLIC_WS_URL` = `wss://<render-service>.onrender.com` |
+
+Set `NEXT_PUBLIC_WS_URL` before the first Vercel build, since it is baked in at build time. Render's free tier sleeps after 15 minutes idle; the client reconnects automatically and boards are restored from Postgres.
 
 ## Shortcuts
 

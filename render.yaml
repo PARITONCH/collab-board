@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: collab-board-realtime
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false

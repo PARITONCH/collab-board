@@ -103,6 +103,12 @@ function handleMessage(room: Room, conn: WebSocket, data: Uint8Array): void {
   }
 }
 
+export async function flushAllRooms(): Promise<void> {
+  const settled = await Promise.allSettled(Array.from(rooms.values()));
+  const live = settled.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
+  await Promise.all(live.map((room) => flushSave(room.id, room.doc)));
+}
+
 async function closeConnection(room: Room, conn: WebSocket): Promise<void> {
   const controlled = room.conns.get(conn);
   room.conns.delete(conn);
