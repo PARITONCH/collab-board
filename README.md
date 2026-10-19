@@ -2,6 +2,28 @@
 
 Real-time collaborative whiteboard built with Next.js, TypeScript, Konva, Yjs and PostgreSQL.
 
+**Live demo:** https://collab-board-jet-seven.vercel.app (open a board in two tabs and draw)
+
+![Collab Board](docs/board.png)
+
+## How it works
+
+```
+Browser (React + Konva)
+   │  edits applied locally, instantly
+   ▼
+Yjs document (CRDT)  ◄── WebSocket ──►  Node sync server (ws + y-protocols)
+                                              │
+                                      PostgreSQL (debounced snapshots,
+                                      flushed on last disconnect and SIGTERM)
+```
+
+- Each shape is a `Y.Map`, so two users editing different properties of the same shape merge without conflicts.
+- Cursors, names and in-progress drawings travel over Yjs awareness, throttled to 40ms.
+- Undo/redo is per user (`Y.UndoManager` tracking only local edits), so you never undo a collaborator's work.
+- The server buffers early client messages while a room loads from Postgres, enforces an origin allowlist, and flushes boards on shutdown.
+- Rendering uses memoized Konva nodes, and only shapes that changed are rebuilt on each update.
+
 ## Stack
 
 - Next.js (App Router), TypeScript, Tailwind
