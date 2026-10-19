@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Check, Link2 } from "lucide-react";
+import { Check, Link2, Pencil } from "lucide-react";
 import type { ConnectionStatus, Identity, Peer } from "@/types/board";
+import { MAX_NAME_LENGTH, cleanName } from "@/lib/identity";
 
 interface TopBarProps {
   identity: Identity;
   peers: Peer[];
   status: ConnectionStatus;
+  onRename: (name: string) => void;
 }
 
 const STATUS_STYLE: Record<ConnectionStatus, { dot: string; label: string }> = {
@@ -26,12 +28,58 @@ function Avatar({ name, color, ring }: { name: string; color: string; ring?: boo
       }`}
       style={{ background: color }}
     >
-      {name.charAt(0)}
+      {name.charAt(0).toUpperCase()}
     </div>
   );
 }
 
-export default function TopBar({ identity, peers, status }: TopBarProps) {
+function NameEditor({ name, onRename }: { name: string; onRename: (name: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+
+  const start = () => {
+    setDraft(name);
+    setEditing(true);
+  };
+
+  const commit = (event?: FormEvent) => {
+    event?.preventDefault();
+    const next = cleanName(draft);
+    if (next && next !== name) onRename(next);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <form onSubmit={commit}>
+        <input
+          autoFocus
+          value={draft}
+          maxLength={MAX_NAME_LENGTH}
+          aria-label="Your name"
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={() => commit()}
+          onKeyDown={(event) => event.key === "Escape" && setEditing(false)}
+          className="w-28 rounded-md border border-indigo-500 bg-neutral-950 px-2 py-1 text-sm outline-none"
+        />
+      </form>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={start}
+      title="Change your name"
+      className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-neutral-200 transition hover:bg-neutral-800"
+    >
+      <span className="max-w-24 truncate">{name}</span>
+      <Pencil size={12} className="text-neutral-500" />
+    </button>
+  );
+}
+
+export default function TopBar({ identity, peers, status, onRename }: TopBarProps) {
   const [copied, setCopied] = useState(false);
   const { dot, label } = STATUS_STYLE[status];
 
@@ -62,6 +110,7 @@ export default function TopBar({ identity, peers, status }: TopBarProps) {
             <Avatar key={peer.clientId} name={peer.name} color={peer.color} />
           ))}
         </div>
+        <NameEditor name={identity.name} onRename={onRename} />
         <button
           type="button"
           onClick={copyLink}

@@ -2,36 +2,53 @@ import { nanoid } from "nanoid";
 import type { Identity } from "@/types/board";
 import { PALETTE } from "./palette";
 
-const STORAGE_KEY = "collab-board:identity";
-const ADJECTIVES = ["Swift", "Quiet", "Brave", "Lucky", "Clever", "Mellow", "Bright", "Nimble"];
-const ANIMALS = ["Otter", "Falcon", "Panda", "Lynx", "Heron", "Koala", "Gecko", "Raven"];
+const SESSION_KEY = "collab-board:session";
+const NAME_KEY = "collab-board:name";
+
+export const MAX_NAME_LENGTH = 24;
+
+type SessionIdentity = Pick<Identity, "id" | "color">;
 
 const pick = <T,>(items: readonly T[]): T => items[Math.floor(Math.random() * items.length)];
 
-function isIdentity(value: unknown): value is Identity {
+function isSessionIdentity(value: unknown): value is SessionIdentity {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Record<string, unknown>;
-  return typeof v.id === "string" && typeof v.name === "string" && typeof v.color === "string";
+  return typeof v.id === "string" && typeof v.color === "string";
 }
 
-export function getIdentity(): Identity {
+export function cleanName(raw: string): string {
+  return raw.trim().replace(/\s+/g, " ").slice(0, MAX_NAME_LENGTH);
+}
+
+export function loadName(): string {
   try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    return cleanName(window.localStorage.getItem(NAME_KEY) ?? "");
+  } catch {
+    return "";
+  }
+}
+
+export function saveName(name: string): void {
+  try {
+    window.localStorage.setItem(NAME_KEY, name);
+  } catch {}
+}
+
+export function getIdentity(name: string): Identity {
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
     if (raw) {
       const parsed: unknown = JSON.parse(raw);
-      if (isIdentity(parsed)) return parsed;
+      if (isSessionIdentity(parsed)) return { id: parsed.id, color: parsed.color, name };
     }
   } catch {}
 
-  const identity: Identity = {
-    id: nanoid(8),
-    name: `${pick(ADJECTIVES)} ${pick(ANIMALS)}`,
-    color: pick(PALETTE.slice(1)),
-  };
+  const session: SessionIdentity = { id: nanoid(8), color: pick(PALETTE.slice(1)) };
 
   try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   } catch {}
 
-  return identity;
+  return { ...session, name };
 }

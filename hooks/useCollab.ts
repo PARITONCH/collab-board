@@ -26,8 +26,8 @@ export interface Collab {
 
 const destroyTimers = new WeakMap<CollabSession, number>();
 
-function createSession(roomId: string): CollabSession {
-  const identity = getIdentity();
+function createSession(roomId: string, name: string): CollabSession {
+  const identity = getIdentity(name);
   const doc = new Y.Doc();
   const provider = new WebsocketProvider(`${WS_URL}/rooms`, roomId, doc, { connect: false, disableBc: true });
   const shapes = doc.getMap<Y.Map<unknown>>("shapes");
@@ -43,8 +43,8 @@ function destroySession(session: CollabSession): void {
   session.doc.destroy();
 }
 
-export function useCollab(roomId: string): Collab {
-  const [session] = useState(() => createSession(roomId));
+export function useCollab(roomId: string, name: string): Collab {
+  const [session] = useState(() => createSession(roomId, name));
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const [synced, setSynced] = useState(false);
 
