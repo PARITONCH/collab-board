@@ -6,6 +6,7 @@ interface BaseShape {
   y: number;
   color: string;
   authorId: string;
+  createdAt: number;
 }
 
 export interface RectShape extends BaseShape {
@@ -40,9 +41,27 @@ export interface StickyShape extends BaseShape {
 
 export type Shape = RectShape | EllipseShape | PenShape | TextShape | StickyShape;
 
-export interface Presence {
+export interface Identity {
   id: string;
   name: string;
   color: string;
-  cursor: { x: number; y: number } | null;
 }
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface Viewport {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+export interface Peer extends Identity {
+  clientId: number;
+  cursor: Point | null;
+  draft: Shape | null;
+}
+
+export type ConnectionStatus = "connecting" | "connected" | "disconnected";

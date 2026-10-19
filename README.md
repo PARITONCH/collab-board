@@ -28,11 +28,17 @@ Web app runs on `http://localhost:3000`, realtime server on `ws://localhost:1234
 | `npm run typecheck` | Type-check web and server code |
 | `npm run build` | Production build of the web app |
 | `npm run start:server` | Run the realtime server |
+| `npm run test:sync` | Sync smoke test against a running server (`EXPECT_PERSISTENCE=1` with Postgres) |
 
 ## Roadmap
 
 - [x] Project setup, realtime server, persistence
-- [ ] Canvas with shapes, pen, text, sticky notes
-- [ ] Yjs sync, live cursors, presence
-- [ ] Undo/redo, zoom/pan
+- [x] Canvas with shapes, pen, text, sticky notes
+- [x] Yjs sync, live cursors, presence
+- [x] Per-user undo/redo, zoom/pan
+- [ ] Resize handles, export to PNG
 - [ ] Deployment
+
+## Shortcuts
+
+`V` select, `R` rectangle, `O` ellipse, `P` pen, `T` text, `S` sticky note, `Del` delete, `Ctrl+Z` undo, `Ctrl+Shift+Z` redo, `Space`+drag pan, scroll to zoom.

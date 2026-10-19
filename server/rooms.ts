@@ -122,50 +122,71 @@ async function closeConnection(room: Room, conn: WebSocket): Promise<void> {
 
 export async function setupConnection(conn: WebSocket, roomId: string): Promise<void> {
   conn.binaryType = "arraybuffer";
-  const room = await getRoom(roomId);
-  room.conns.set(conn, new Set());
 
-  conn.on("message", (raw: ArrayBuffer) => {
+  const pending: Uint8Array[] = [];
+  let room: Room | null = null;
+  let closed = false;
+  let alive = true;
+  const heartbeat: { timer?: ReturnType<typeof setInterval> } = {};
+
+  const dispatch = (target: Room, data: Uint8Array) => {
     try {
-      handleMessage(room, conn, new Uint8Array(raw));
+      handleMessage(target, conn, data);
     } catch (err) {
       console.error("message error", err);
     }
-  });
+  };
 
-  let alive = true;
-  const ping = setInterval(() => {
-    if (!alive) {
-      clearInterval(ping);
-      void closeConnection(room, conn);
-      return;
-    }
-    alive = false;
-    conn.ping();
-  }, 30000);
+  conn.on("message", (raw: ArrayBuffer) => {
+    const data = new Uint8Array(raw);
+    if (room) dispatch(room, data);
+    else pending.push(data);
+  });
 
   conn.on("pong", () => {
     alive = true;
   });
 
   conn.on("close", () => {
-    clearInterval(ping);
-    void closeConnection(room, conn);
+    closed = true;
+    clearInterval(heartbeat.timer);
+    if (room) void closeConnection(room, conn);
   });
+
+  const joined = await getRoom(roomId);
+  joined.conns.set(conn, new Set());
+  room = joined;
+
+  if (closed) {
+    await closeConnection(joined, conn);
+    return;
+  }
+
+  heartbeat.timer = setInterval(() => {
+    if (!alive) {
+      clearInterval(heartbeat.timer);
+      void closeConnection(joined, conn);
+      return;
+    }
+    alive = false;
+    conn.ping();
+  }, 30000);
 
   const syncEncoder = encoding.createEncoder();
   encoding.writeVarUint(syncEncoder, MESSAGE_SYNC);
-  syncProtocol.writeSyncStep1(syncEncoder, room.doc);
+  syncProtocol.writeSyncStep1(syncEncoder, joined.doc);
   send(conn, encoding.toUint8Array(syncEncoder));
 
-  const states = room.awareness.getStates();
+  const states = joined.awareness.getStates();
   if (states.size > 0) {
     const awarenessEncoder = encoding.createEncoder();
     encoding.writeVarUint(awarenessEncoder, MESSAGE_AWARENESS);
     encoding.writeVarUint8Array(
       awarenessEncoder,
-      awarenessProtocol.encodeAwarenessUpdate(room.awareness, Array.from(states.keys()))
+      awarenessProtocol.encodeAwarenessUpdate(joined.awareness, Array.from(states.keys()))
     );
     send(conn, encoding.toUint8Array(awarenessEncoder));
   }
+
+  for (const data of pending.splice(0)) dispatch(joined, data);
 }

@@ -10,11 +10,13 @@
     "dev:web": "next dev",
     "dev:server": "tsx watch server/index.ts",
     "start:server": "tsx server/index.ts",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json",
+    "test:sync": "tsx scripts/sync-smoke.ts"
   },
   "dependencies": {
     "konva": "^10.8.0",
     "lib0": "^0.2.119",
+    "lucide-react": "^1.59.0",
     "nanoid": "^6.0.2",
     "next": "16.4.0",
     "pg": "^8.23.1",
