@@ -3,7 +3,6 @@ import type { Identity } from "@/types/board";
 import { PALETTE } from "./palette";
 
 const SESSION_KEY = "collab-board:session";
-const NAME_KEY = "collab-board:name";
 
 export const MAX_NAME_LENGTH = 24;
 
@@ -19,20 +18,6 @@ function isSessionIdentity(value: unknown): value is SessionIdentity {
 
 export function cleanName(raw: string): string {
   return raw.trim().replace(/\s+/g, " ").slice(0, MAX_NAME_LENGTH);
-}
-
-export function loadName(): string {
-  try {
-    return cleanName(window.localStorage.getItem(NAME_KEY) ?? "");
-  } catch {
-    return "";
-  }
-}
-
-export function saveName(name: string): void {
-  try {
-    window.localStorage.setItem(NAME_KEY, name);
-  } catch {}
 }
 
 export function getIdentity(name: string): Identity {

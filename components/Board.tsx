@@ -5,7 +5,6 @@ import { useCollab } from "@/hooks/useCollab";
 import { usePeers } from "@/hooks/usePeers";
 import { useShapes } from "@/hooks/useShapes";
 import { useShortcuts } from "@/hooks/useShortcuts";
-import { loadName, saveName } from "@/lib/identity";
 import { useBoardStore } from "@/store/board";
 import Canvas from "./Canvas";
 import NameDialog from "./NameDialog";
@@ -56,13 +55,8 @@ function BoardView({ roomId, name, onRename }: BoardViewProps) {
 }
 
 export default function Board({ roomId }: BoardProps) {
-  const [name, setName] = useState(loadName);
+  const [name, setName] = useState("");
 
-  const updateName = (next: string) => {
-    saveName(next);
-    setName(next);
-  };
-
-  if (!name) return <NameDialog onSubmit={updateName} />;
-  return <BoardView roomId={roomId} name={name} onRename={updateName} />;
+  if (!name) return <NameDialog onSubmit={setName} />;
+  return <BoardView roomId={roomId} name={name} onRename={setName} />;
 }
