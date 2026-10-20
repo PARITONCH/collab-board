@@ -18,7 +18,7 @@ export default function RoomPage({ params }: RoomPageProps) {
   return (
     <Suspense
       fallback={
-        <main className="flex h-screen items-center justify-center text-neutral-500">Loading board…</main>
+        <main className="flex h-dvh items-center justify-center text-neutral-500">Loading board…</main>
       }
     >
       <RoomContent params={params} />

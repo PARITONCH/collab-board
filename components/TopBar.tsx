@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Check, Link2, Pencil } from "lucide-react";
+import { Check, Home, Link2, Pencil } from "lucide-react";
 import type { ConnectionStatus, Identity, Peer } from "@/types/board";
 import { MAX_NAME_LENGTH, cleanName } from "@/lib/identity";
 
@@ -60,7 +60,7 @@ function NameEditor({ name, onRename }: { name: string; onRename: (name: string)
           onChange={(event) => setDraft(event.target.value)}
           onBlur={() => commit()}
           onKeyDown={(event) => event.key === "Escape" && setEditing(false)}
-          className="w-28 rounded-md border border-indigo-500 bg-neutral-950 px-2 py-1 text-sm outline-none"
+          className="w-28 rounded-md border border-indigo-500 bg-neutral-950 px-2 py-1 text-base sm:text-sm outline-none"
         />
       </form>
     );
@@ -73,7 +73,7 @@ function NameEditor({ name, onRename }: { name: string; onRename: (name: string)
       title="Change your name"
       className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-neutral-200 transition hover:bg-neutral-800"
     >
-      <span className="max-w-24 truncate">{name}</span>
+      <span className="max-w-16 truncate sm:max-w-24">{name}</span>
       <Pencil size={12} className="text-neutral-500" />
     </button>
   );
@@ -95,14 +95,15 @@ export default function TopBar({ identity, peers, status, onRename }: TopBarProp
     <>
       <Link
         href="/"
-        className="absolute top-4 left-4 rounded-xl border border-neutral-800 bg-neutral-900/90 px-3 py-2 text-sm font-semibold backdrop-blur transition hover:bg-neutral-800"
+        className="absolute top-3 left-3 flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/90 px-2.5 py-2 text-sm sm:top-4 sm:left-4 sm:px-3 font-semibold backdrop-blur transition hover:bg-neutral-800"
       >
-        Collab Board
+        <Home size={16} className="sm:hidden" aria-label="Home" />
+        <span className="hidden sm:inline">Collab Board</span>
       </Link>
-      <div className="absolute top-4 right-4 flex items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900/90 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+      <div className="absolute top-3 right-3 flex max-w-[calc(100vw-4.5rem)] items-center gap-2 rounded-xl sm:top-4 sm:right-4 sm:max-w-none sm:gap-3 border border-neutral-800 bg-neutral-900/90 px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-1.5 text-xs text-neutral-400" title={label}>
           <span className={`h-2 w-2 rounded-full ${dot}`} />
-          {label}
+          <span className="hidden sm:inline">{label}</span>
         </div>
         <div className="flex -space-x-2">
           <Avatar name={`${identity.name} (you)`} color={identity.color} ring />
@@ -117,7 +118,7 @@ export default function TopBar({ identity, peers, status, onRename }: TopBarProp
           className="flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3 py-1.5 text-sm font-medium transition hover:bg-indigo-400"
         >
           {copied ? <Check size={14} /> : <Link2 size={14} />}
-          {copied ? "Copied" : "Share"}
+          <span className="hidden sm:inline">{copied ? "Copied" : "Share"}</span>
         </button>
       </div>
     </>

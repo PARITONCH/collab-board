@@ -17,7 +17,7 @@ export default function NameDialog({ onSubmit }: NameDialogProps) {
   };
 
   return (
-    <main className="flex h-screen items-center justify-center bg-neutral-950 px-6">
+    <main className="flex h-dvh items-center justify-center bg-neutral-950 px-6">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-xl"

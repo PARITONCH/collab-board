@@ -45,6 +45,11 @@ interface PanState {
   view: Viewport;
 }
 
+interface PinchState {
+  distance: number;
+  center: Point;
+}
+
 const GRID_SIZE = 24;
 
 function SelectionOutline({ shape, scale }: { shape: Shape; scale: number }) {
@@ -79,6 +84,8 @@ export default function Canvas({ session, shapes, peers }: CanvasProps) {
   const draftRef = useRef<ActiveDraft | null>(null);
   const panRef = useRef<PanState | null>(null);
   const pendingTextRef = useRef<TextShape | StickyShape | null>(null);
+  const touchesRef = useRef(new Map<number, Point>());
+  const pinchRef = useRef<PinchState | null>(null);
   const [draft, setDraft] = useState<Shape | null>(null);
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [spaceHeld, setSpaceHeld] = useState(false);
@@ -130,6 +137,76 @@ export default function Canvas({ session, shapes, peers }: CanvasProps) {
       select(active.shape.id);
     }
   });
+
+  const cancelGesture = useEffectEvent(() => {
+    panRef.current = null;
+    pendingTextRef.current = null;
+    if (!draftRef.current) return;
+    draftRef.current = null;
+    setDraft(null);
+    clearDraft();
+  });
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    const touches = touchesRef.current;
+
+    const localPoint = (event: PointerEvent): Point => {
+      const rect = element.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    };
+
+    const measure = (): PinchState => {
+      const [first, second] = Array.from(touches.values());
+      return {
+        distance: Math.hypot(first.x - second.x, first.y - second.y),
+        center: { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 },
+      };
+    };
+
+    const onDown = (event: PointerEvent) => {
+      if (event.pointerType !== "touch") return;
+      touches.set(event.pointerId, localPoint(event));
+      if (touches.size === 2) {
+        cancelGesture();
+        pinchRef.current = measure();
+      }
+    };
+
+    const onMove = (event: PointerEvent) => {
+      if (event.pointerType !== "touch" || !touches.has(event.pointerId)) return;
+      touches.set(event.pointerId, localPoint(event));
+      const previous = pinchRef.current;
+      if (!previous || touches.size < 2) return;
+      const next = measure();
+      const state = useBoardStore.getState();
+      const zoomed = zoomAt(state.view, next.distance / previous.distance, next.center);
+      state.setView({
+        ...zoomed,
+        x: zoomed.x + next.center.x - previous.center.x,
+        y: zoomed.y + next.center.y - previous.center.y,
+      });
+      pinchRef.current = next;
+    };
+
+    const onUp = (event: PointerEvent) => {
+      if (event.pointerType !== "touch") return;
+      touches.delete(event.pointerId);
+      if (touches.size < 2) pinchRef.current = null;
+    };
+
+    element.addEventListener("pointerdown", onDown, true);
+    element.addEventListener("pointermove", onMove, true);
+    element.addEventListener("pointerup", onUp, true);
+    element.addEventListener("pointercancel", onUp, true);
+    return () => {
+      element.removeEventListener("pointerdown", onDown, true);
+      element.removeEventListener("pointermove", onMove, true);
+      element.removeEventListener("pointerup", onUp, true);
+      element.removeEventListener("pointercancel", onUp, true);
+    };
+  }, []);
 
   useEffect(() => {
     const end = () => finishInteraction();
@@ -183,7 +260,11 @@ export default function Canvas({ session, shapes, peers }: CanvasProps) {
 
   const handlePointerDown = (event: KonvaEventObject<PointerEvent>) => {
     const stage = event.target.getStage();
-    if (!stage || editing || event.evt.button === 2) return;
+    if (!stage || pinchRef.current || event.evt.button === 2) return;
+    if (editing) {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      return;
+    }
     const pointer = stage.getPointerPosition();
     if (!pointer) return;
     const onStage = event.target === stage;
@@ -210,7 +291,7 @@ export default function Canvas({ session, shapes, peers }: CanvasProps) {
   const handlePointerMove = (event: KonvaEventObject<PointerEvent>) => {
     const stage = event.target.getStage();
     const pointer = stage?.getPointerPosition();
-    if (!stage || !pointer) return;
+    if (!stage || !pointer || pinchRef.current) return;
 
     const pan = panRef.current;
     if (pan) {
@@ -289,6 +370,7 @@ export default function Canvas({ session, shapes, peers }: CanvasProps) {
       ref={containerRef}
       className="absolute inset-0 touch-none overflow-hidden select-none"
       onPointerLeave={clearCursor}
+      onContextMenu={(event) => event.preventDefault()}
       style={{
         cursor,
         backgroundImage: gap >= 8 ? "radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)" : "none",

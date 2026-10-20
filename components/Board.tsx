@@ -41,7 +41,7 @@ function BoardView({ roomId, name, onRename }: BoardViewProps) {
   }, [session, name]);
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-neutral-950">
+    <main className="relative h-dvh w-screen overflow-hidden bg-neutral-950">
       <Canvas session={session} shapes={shapes} peers={peers} />
       <Toolbar session={session} />
       <TopBar

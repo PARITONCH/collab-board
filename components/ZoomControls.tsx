@@ -15,7 +15,7 @@ export default function ZoomControls() {
     setView(zoomAt(view, factor, { x: window.innerWidth / 2, y: window.innerHeight / 2 }));
 
   return (
-    <div className="absolute bottom-4 left-4 flex items-center gap-1 rounded-xl border border-neutral-800 bg-neutral-900/90 p-1 backdrop-blur">
+    <div className="absolute top-16 left-3 sm:top-auto sm:bottom-4 sm:left-4 flex items-center gap-1 rounded-xl border border-neutral-800 bg-neutral-900/90 p-1 backdrop-blur">
       <button type="button" aria-label="Zoom out" onClick={() => zoom(1 / 1.25)} className={buttonClass}>
         <Minus size={16} />
       </button>

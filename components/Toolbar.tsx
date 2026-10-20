@@ -33,10 +33,10 @@ const TOOLS: { tool: Tool; label: string; key: string; icon: LucideIcon }[] = [
 ];
 
 const buttonClass =
-  "flex h-9 w-9 items-center justify-center rounded-lg text-neutral-300 transition hover:bg-neutral-800 disabled:pointer-events-none disabled:opacity-30";
+  "flex h-9 w-8 sm:w-9 items-center justify-center rounded-lg text-neutral-300 transition hover:bg-neutral-800 disabled:pointer-events-none disabled:opacity-30";
 
 function Divider() {
-  return <div className="my-1 h-px bg-neutral-800" />;
+  return <div className="hidden h-px bg-neutral-800 sm:my-1 sm:block" />;
 }
 
 export default function Toolbar({ session }: ToolbarProps) {
@@ -55,7 +55,7 @@ export default function Toolbar({ session }: ToolbarProps) {
   };
 
   return (
-    <div className="absolute top-1/2 left-4 flex -translate-y-1/2 flex-col gap-1 rounded-xl border border-neutral-800 bg-neutral-900/90 p-1.5 shadow-xl backdrop-blur">
+    <div className="absolute bottom-3 left-1/2 flex w-[calc(100vw-1.5rem)] max-w-md -translate-x-1/2 flex-wrap items-center justify-center gap-1 rounded-xl sm:top-1/2 sm:bottom-auto sm:left-4 sm:w-auto sm:max-w-none sm:-translate-y-1/2 sm:translate-x-0 sm:flex-col sm:flex-nowrap border border-neutral-800 bg-neutral-900/90 p-1.5 shadow-xl backdrop-blur">
       {TOOLS.map(({ tool: value, label, key, icon: Icon }) => (
         <button
           key={value}
@@ -70,7 +70,7 @@ export default function Toolbar({ session }: ToolbarProps) {
         </button>
       ))}
       <Divider />
-      <div className="grid grid-cols-2 gap-1.5 p-1">
+      <div className="order-last flex basis-full flex-wrap justify-center gap-2 p-1 sm:order-none sm:grid sm:basis-auto sm:grid-cols-2 sm:gap-1.5">
         {PALETTE.map((swatch) => (
           <button
             key={swatch}
@@ -78,7 +78,7 @@ export default function Toolbar({ session }: ToolbarProps) {
             aria-label={`Color ${swatch}`}
             aria-pressed={color === swatch}
             onClick={() => setColor(swatch)}
-            className={`h-5 w-5 rounded-full border transition ${
+            className={`h-6 w-6 rounded-full border sm:h-5 sm:w-5 transition ${
               color === swatch ? "scale-110 border-white" : "border-neutral-700"
             }`}
             style={{ background: swatch }}
