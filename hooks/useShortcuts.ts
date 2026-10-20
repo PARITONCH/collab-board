@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import type { Tool } from "@/types/board";
-import { removeShape } from "@/lib/shapes";
+import { duplicateShape, removeShape } from "@/lib/shapes";
 import { useBoardStore } from "@/store/board";
 import type { CollabSession } from "./useCollab";
 
@@ -37,6 +37,14 @@ export function useShortcuts(session: CollabSession | null): void {
         event.preventDefault();
         if (event.shiftKey) undo.redo();
         else undo.undo();
+        return;
+      }
+      if (mod && key === "d") {
+        event.preventDefault();
+        if (store.selectedId) {
+          const id = duplicateShape(session, store.selectedId, session.identity.id);
+          if (id) store.select(id);
+        }
         return;
       }
       if (mod && key === "y") {

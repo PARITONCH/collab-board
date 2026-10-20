@@ -2,6 +2,7 @@
 
 import {
   Circle,
+  Copy,
   MousePointer2,
   Pencil,
   Redo2,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import type { Tool } from "@/types/board";
 import { PALETTE } from "@/lib/palette";
-import { removeShape } from "@/lib/shapes";
+import { duplicateShape, removeShape } from "@/lib/shapes";
 import type { CollabSession } from "@/hooks/useCollab";
 import { useUndoState } from "@/hooks/useUndoState";
 import { useBoardStore } from "@/store/board";
@@ -33,7 +34,7 @@ const TOOLS: { tool: Tool; label: string; key: string; icon: LucideIcon }[] = [
 ];
 
 const buttonClass =
-  "flex h-9 w-8 sm:w-9 items-center justify-center rounded-lg text-neutral-300 transition hover:bg-neutral-800 disabled:pointer-events-none disabled:opacity-30";
+  "flex h-9 w-7 sm:w-9 items-center justify-center rounded-lg text-neutral-300 transition hover:bg-neutral-800 disabled:pointer-events-none disabled:opacity-30";
 
 function Divider() {
   return <div className="hidden h-px bg-neutral-800 sm:my-1 sm:block" />;
@@ -52,6 +53,12 @@ export default function Toolbar({ session }: ToolbarProps) {
     if (!selectedId) return;
     removeShape(session, selectedId);
     select(null);
+  };
+
+  const duplicateSelected = () => {
+    if (!selectedId) return;
+    const id = duplicateShape(session, selectedId, session.identity.id);
+    if (id) select(id);
   };
 
   return (
@@ -105,6 +112,16 @@ export default function Toolbar({ session }: ToolbarProps) {
         className={buttonClass}
       >
         <Redo2 size={18} />
+      </button>
+      <button
+        type="button"
+        title="Duplicate (Ctrl+D)"
+        aria-label="Duplicate"
+        disabled={!selectedId}
+        onClick={duplicateSelected}
+        className={buttonClass}
+      >
+        <Copy size={18} />
       </button>
       <button
         type="button"

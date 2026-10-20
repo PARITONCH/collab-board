@@ -56,6 +56,24 @@ export function removeShape({ doc, shapes, undo }: BoardContext, id: string): vo
   doc.transact(() => shapes.delete(id), LOCAL_ORIGIN);
 }
 
+export const DUPLICATE_OFFSET = 24;
+
+export function duplicateShape(ctx: BoardContext, id: string, authorId: string): string | null {
+  const entry = ctx.shapes.get(id);
+  if (!entry) return null;
+  const source = entry.toJSON() as Shape;
+  const copy = {
+    ...source,
+    id: nanoid(10),
+    x: source.x + DUPLICATE_OFFSET,
+    y: source.y + DUPLICATE_OFFSET,
+    authorId,
+    createdAt: Date.now(),
+  } as Shape;
+  addShape(ctx, copy);
+  return copy.id;
+}
+
 export function normalizeBox(a: Point, b: Point): Box {
   return {
     x: Math.min(a.x, b.x),

@@ -5,6 +5,7 @@ interface BaseShape {
   x: number;
   y: number;
   color: string;
+  rotation?: number;
   authorId: string;
   createdAt: number;
 }

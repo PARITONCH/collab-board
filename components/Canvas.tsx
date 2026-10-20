@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import type { KonvaEventObject } from "konva/lib/Node";
-import { Layer, Rect, Stage } from "react-konva";
+import { Circle, Group, Layer, Line, Rect, Stage } from "react-konva";
 import type { Peer, Point, Shape, StickyShape, TextShape, Viewport } from "@/types/board";
 import { CURSOR_THROTTLE_MS } from "@/lib/config";
 import {
@@ -52,20 +52,67 @@ interface PinchState {
 
 const GRID_SIZE = 24;
 
-function SelectionOutline({ shape, scale }: { shape: Shape; scale: number }) {
+function SelectionOutline({
+  shape,
+  scale,
+  onRotate,
+}: {
+  shape: Shape;
+  scale: number;
+  onRotate: (id: string, degrees: number, snap: boolean) => void;
+}) {
   const box = boundsOf(shape);
   const pad = 6 / scale;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  const handleY = -box.height / 2 - pad - 22 / scale;
   return (
-    <Rect
-      x={box.x - pad}
-      y={box.y - pad}
-      width={box.width + pad * 2}
-      height={box.height + pad * 2}
-      stroke="#6366f1"
-      strokeWidth={1.5 / scale}
-      dash={[6 / scale, 4 / scale]}
-      listening={false}
-    />
+    <Group x={cx} y={cy} rotation={shape.rotation ?? 0}>
+      <Rect
+        x={-box.width / 2 - pad}
+        y={-box.height / 2 - pad}
+        width={box.width + pad * 2}
+        height={box.height + pad * 2}
+        stroke="#6366f1"
+        strokeWidth={1.5 / scale}
+        dash={[6 / scale, 4 / scale]}
+        listening={false}
+      />
+      <Line
+        points={[0, -box.height / 2 - pad, 0, handleY]}
+        stroke="#6366f1"
+        strokeWidth={1.5 / scale}
+        listening={false}
+      />
+      <Circle
+        x={0}
+        y={handleY}
+        radius={9 / scale}
+        fill="#ffffff"
+        stroke="#6366f1"
+        strokeWidth={2 / scale}
+        hitStrokeWidth={14 / scale}
+        draggable
+        onPointerDown={(event) => {
+          event.cancelBubble = true;
+        }}
+        onMouseEnter={(event) => {
+          const container = event.target.getStage()?.container();
+          if (container) container.style.cursor = "grab";
+        }}
+        onMouseLeave={(event) => {
+          const container = event.target.getStage()?.container();
+          if (container) container.style.cursor = "";
+        }}
+        onDragMove={(event) => {
+          const pointer = event.target.getStage()?.getRelativePointerPosition();
+          event.target.position({ x: 0, y: handleY });
+          if (!pointer) return;
+          const angle = (Math.atan2(pointer.y - cy, pointer.x - cx) * 180) / Math.PI + 90;
+          onRotate(shape.id, angle, event.evt.shiftKey);
+        }}
+      />
+    </Group>
   );
 }
 
@@ -337,6 +384,13 @@ export default function Canvas({ session, shapes, peers }: CanvasProps) {
     setEditing({ shape, isNew: false });
   }, []);
 
+  const handleRotate = (id: string, degrees: number, snap: boolean) => {
+    const normalized = ((degrees % 360) + 360) % 360;
+    const nearest = Math.round(normalized / 15) * 15;
+    const value = snap || Math.abs(normalized - nearest) < 3 ? nearest % 360 : Math.round(normalized);
+    patchShape(session, id, { rotation: value });
+  };
+
   const commitEdit = (text: string) => {
     if (!editing) return;
     const { shape, isNew } = editing;
@@ -401,7 +455,7 @@ export default function Canvas({ session, shapes, peers }: CanvasProps) {
               />
             ))}
             {draft && <ShapeView shape={draft} interactive={false} />}
-            {selected && <SelectionOutline shape={selected} scale={view.scale} />}
+            {selected && <SelectionOutline shape={selected} scale={view.scale} onRotate={handleRotate} />}
           </Layer>
           <Layer listening={false}>
             {peers.map(
